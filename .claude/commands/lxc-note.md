@@ -1,0 +1,1 @@
+Run `ltm lxc-note` to generate a markdown note for the Proxmox LXC Notes tab and display the output to me.

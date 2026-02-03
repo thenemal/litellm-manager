@@ -1,0 +1,1 @@
+Run `ltm snapshot -l "$ARGUMENTS"` to take a configuration snapshot of all tracked files. If no label argument is provided, run `ltm snapshot` without the -l flag. Show me the output.

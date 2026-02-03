@@ -1,0 +1,1 @@
+Run `ltm snapshots` to list all saved configuration snapshots and display the output to me.

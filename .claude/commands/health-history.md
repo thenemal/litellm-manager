@@ -1,0 +1,1 @@
+Run `ltm health-history -n 20` to show recent health check results and display the table to me.

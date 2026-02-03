@@ -1,0 +1,1 @@
+Run `ltm check-update` to see if a newer version of LiteLLM is available on PyPI. Display the output to me.

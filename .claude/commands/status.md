@@ -1,0 +1,1 @@
+Run `ltm status` to show the current LiteLLM container status and display the output to me.

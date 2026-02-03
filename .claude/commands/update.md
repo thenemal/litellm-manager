@@ -1,0 +1,1 @@
+Run `ltm update` to perform a full LiteLLM update (uv pip install --upgrade, service restart). Display the output to me and summarize the result — whether it succeeded and the old/new versions.

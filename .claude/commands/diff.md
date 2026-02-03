@@ -1,0 +1,1 @@
+Run `ltm diff $ARGUMENTS` to compare two configuration snapshots. The arguments should be: source-name timestamp1 timestamp2. Show me the diff output.

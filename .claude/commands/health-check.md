@@ -1,0 +1,1 @@
+Run `ltm health-check` to perform a full health check of the LiteLLM service (service status, PostgreSQL, HTTP, CPU, memory, disk) and display the results to me.
