@@ -45,7 +45,9 @@ def check_for_updates() -> dict:
         output = result.stdout + result.stderr
 
         # If "Would install" or "Would upgrade" appears, there's an update
-        if "Would" in output or "would" in output:
+        # "Would make no changes" means already up to date
+        has_update = ("Would install" in output or "Would upgrade" in output) and "Would make no changes" not in output
+        if has_update:
             return {
                 "up_to_date": False,
                 "current_version": current_ver,
@@ -88,7 +90,7 @@ def _wait_for_healthy(timeout: int = 60, interval: int = 5) -> bool:
     while time.monotonic() < deadline:
         if check_service_status():
             http_status, _ = check_http()
-            if http_status and 200 <= http_status < 400:
+            if http_status and http_status < 500:
                 return True
         time.sleep(interval)
     return False
