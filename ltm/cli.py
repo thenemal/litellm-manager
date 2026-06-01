@@ -340,7 +340,8 @@ def cmd_update(args):
         old = result.get("old_version") or {}
         new = result.get("new_version") or {}
         print(f"Update successful!")
-        print(f"  {old.get('version', '?')} -> {new.get('version', '?')}")
+        print(f"  litellm:               {old.get('version', '?')} -> {new.get('version', '?')}")
+        print(f"  litellm-proxy-extras:  {old.get('proxy_extras', '?')} -> {new.get('proxy_extras', '?')}")
     else:
         print(f"Update FAILED: {result.get('error', 'unknown error')}")
         sys.exit(1)
