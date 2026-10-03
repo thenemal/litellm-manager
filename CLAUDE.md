@@ -29,6 +29,7 @@ ltm check-update
 ltm update --dry-run
 ltm update
 ltm update --version 1.103.2   # pin / reinstall-repair
+ltm update --no-backup
 ltm lxc-note
 ```
 

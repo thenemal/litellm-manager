@@ -34,7 +34,7 @@ ltm snapshots                      # List saved snapshots
 ltm diff litellm-yaml ts1 ts2      # Compare two snapshots
 ltm export <timestamp>             # Export snapshot as YAML
 
-ltm check-update        # Check PyPI for newer litellm
+ltm check-update        # Compare installed litellm with latest on PyPI
 ltm update              # Upgrade to latest (backup, install, migrate, restart, verify)
 ltm update --dry-run    # Preview without changes
 ltm update --version X  # Pin a release (current version = reinstall/repair)
@@ -45,6 +45,22 @@ ltm cron-remove         # Remove cron job
 
 ltm lxc-note            # Generate Proxmox LXC Notes markdown
 ```
+
+## Update procedure
+
+`ltm update` follows LiteLLM's [uv/venv upgrade guide](https://docs.litellm.ai/docs/troubleshoot/pip_venv_upgrade):
+
+1. Pre-update config snapshot
+2. `systemctl stop litellm`
+3. `pg_dump -F c` to `backups/pre-<old-version>-<timestamp>.dump` (skip with `--no-backup`)
+4. `uv pip install 'litellm[proxy]==X'` -- the `[proxy]` extra pins the matching `litellm-proxy-extras` and proxy-only deps; never upgrade proxy-extras on its own
+5. `prisma generate`, `prisma migrate deploy`, `prisma migrate status` against `litellm_proxy_extras/schema.prisma`
+6. `systemctl start litellm`, then poll health for up to 10 minutes
+7. Post-update snapshot and a `maintenance_log` entry
+
+If stop, backup, or install fails, the old version is started again. If a Prisma step fails, the service is left stopped. Restore a backup with `pg_restore`.
+
+`/opt/litellm/.env` sets `DISABLE_SCHEMA_UPDATE=true`, so the proxy does not migrate at startup and `ltm update` is the only migrator. A manual upgrade must run `prisma migrate deploy` itself. With this flag the proxy logs a harmless `Failed to generate migration diff ... schema.prisma: file or directory not found` at startup: LiteLLM's drift check uses a relative `./schema.prisma` path that only exists in its Docker image.
 
 ## Categories
 
@@ -61,6 +77,7 @@ Notes and log entries support these categories (prefix-matching enabled):
 | **Install path** | `/opt/litellm` |
 | **Package manager** | `uv` |
 | **Health endpoint** | `http://localhost:4000/health` |
+| **DB backups** | `backups/` (gitignored) |
 | **Manager DB** | `ltm.db` (SQLite, overridable via `LTM_DB` env var) |
 
 ## Testing
