@@ -84,6 +84,9 @@ def main():
     # --- update ---
     p_update = sub.add_parser("update", help="Update LiteLLM to latest version")
     p_update.add_argument("--dry-run", action="store_true", help="Show what would happen without making changes")
+    p_update.add_argument("--version", dest="target_version", metavar="X.Y.Z",
+                          help="Install this litellm release (default: latest; current version = reinstall/repair)")
+    p_update.add_argument("--no-backup", action="store_true", help="Skip the pg_dump backup before upgrading")
 
     # --- check-update ---
     sub.add_parser("check-update", help="Check if LiteLLM updates are available")
@@ -318,52 +321,54 @@ def cmd_update(args):
     else:
         print("Starting LiteLLM update...\n")
 
-    result = run_update(dry_run=args.dry_run)
+    result = run_update(dry_run=args.dry_run, version=args.target_version,
+                        backup=not args.no_backup)
+
+    if result.get("up_to_date"):
+        print(f"Already up to date ({(result.get('old_version') or {}).get('version', '?')}).")
+        return
 
     for step in result["steps"]:
         status = "OK" if step["success"] else "FAIL"
-        detail = f"  ({step.get('detail', '')})" if step.get("detail") else ""
-        print(f"  [{status}] {step['step']}{detail}")
+        detail = step.get("detail")
+        if detail and "\n" in detail:
+            print(f"  [{status}] {step['step']}")
+            print("\n".join("        " + line for line in detail.splitlines()))
+        else:
+            print(f"  [{status}] {step['step']}" + (f"  ({detail})" if detail else ""))
 
     print()
-    if result["dry_run"]:
-        info = result.get("update_info", {})
-        if info.get("up_to_date"):
-            print("Already up to date.")
-        elif info.get("up_to_date") is False:
-            print(f"Update available: {info.get('current_version', '?')}")
-            if info.get("detail"):
-                print(f"  {info['detail']}")
-        elif info.get("error"):
-            print(f"Could not check: {info['error']}")
+    old = result.get("old_version") or {}
+    if result["dry_run"] and result["success"]:
+        verb = "reinstall" if old.get("version") == result["target_version"] else "update"
+        print(f"Would {verb} litellm {old.get('version', '?')} -> {result['target_version']}")
     elif result["success"]:
-        old = result.get("old_version") or {}
         new = result.get("new_version") or {}
         print(f"Update successful!")
         print(f"  litellm:               {old.get('version', '?')} -> {new.get('version', '?')}")
         print(f"  litellm-proxy-extras:  {old.get('proxy_extras', '?')} -> {new.get('proxy_extras', '?')}")
+        if result.get("backup_path"):
+            print(f"  DB backup:             {result['backup_path']}")
     else:
         print(f"Update FAILED: {result.get('error', 'unknown error')}")
+        if result.get("backup_path"):
+            print(f"  DB backup: {result['backup_path']}")
         sys.exit(1)
 
 
 def cmd_check_update(args):
-    from .update import get_current_version, check_for_updates
-    current = get_current_version()
-    print(f"  Current: {current.get('version', '?')}")
-    print()
-    print("  Checking PyPI for updates...")
+    from .update import check_for_updates
     info = check_for_updates()
+    print(f"  Current: {info.get('current_version') or '?'}")
     if info.get("error"):
-        print(f"  Error: {info['error']}")
+        print(f"  Error checking PyPI: {info['error']}")
         sys.exit(1)
-    elif info.get("up_to_date"):
+    print(f"  Latest:  {info.get('latest_version')}")
+    print()
+    if info.get("up_to_date"):
         print("  Already up to date.")
     else:
-        print(f"  Update available!")
-        if info.get("detail"):
-            print(f"  {info['detail']}")
-        print(f"\n  Run 'ltm update' to apply.")
+        print(f"  Update available. Run 'ltm update' to apply.")
 
 
 def cmd_lxc_note(args):

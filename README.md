@@ -6,7 +6,7 @@ A lightweight CLI tool for tracking maintenance, health, and configuration of a 
 
 - **Health checks** -- monitors LiteLLM service, PostgreSQL, HTTP endpoint, CPU, memory, and disk
 - **Config snapshots** -- captures `.env`, `litellm.yaml`, systemd unit, network config, and `uv pip freeze`
-- **Update management** -- upgrades LiteLLM via `uv`, restarts service, verifies health, takes pre/post snapshots
+- **Update management** -- follows LiteLLM's official uv/venv upgrade procedure: stops the service, backs up the DB with `pg_dump`, installs `litellm[proxy]==X`, regenerates the Prisma client, deploys migrations, restarts and verifies health, takes pre/post snapshots
 - **Maintenance log** -- categorized notes with timestamps and tags
 - **Cron scheduling** -- automated health checks on an interval
 - **Proxmox LXC notes** -- generates markdown for the Proxmox Notes tab
@@ -35,8 +35,10 @@ ltm diff litellm-yaml ts1 ts2      # Compare two snapshots
 ltm export <timestamp>             # Export snapshot as YAML
 
 ltm check-update        # Check PyPI for newer litellm
-ltm update              # Upgrade litellm, restart, verify
+ltm update              # Upgrade to latest (backup, install, migrate, restart, verify)
 ltm update --dry-run    # Preview without changes
+ltm update --version X  # Pin a release (current version = reinstall/repair)
+ltm update --no-backup  # Skip the pg_dump backup
 
 ltm cron-install -i 15  # Health check every 15 minutes
 ltm cron-remove         # Remove cron job

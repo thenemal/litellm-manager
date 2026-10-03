@@ -7,6 +7,10 @@ LITELLM_YAML = "/opt/litellm/litellm.yaml"
 LITELLM_SERVICE = "litellm"
 LITELLM_URL = "http://localhost:4000"
 HEALTH_CHECK_URL = "http://localhost:4000/health"
+PYPI_URL = "https://pypi.org/pypi/litellm/json"
+
+# Pre-update pg_dump backups
+BACKUP_DIR = "/root/litellm-manager/backups"
 
 # LXC config (readable from inside the container)
 LXC_CONFIG_PATHS = [

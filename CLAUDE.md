@@ -28,6 +28,7 @@ ltm snapshot -l "before-upgrade"
 ltm check-update
 ltm update --dry-run
 ltm update
+ltm update --version 1.103.2   # pin / reinstall-repair
 ltm lxc-note
 ```
 
@@ -46,7 +47,7 @@ cli.py  ──→  health.py   ──→  db.py (SQLite via context manager)
 - **health.py**: Reads `/proc/stat` and `/proc/meminfo` directly, uses `os.statvfs()` for disk, `urllib` for HTTP checks, `subprocess` for systemctl/journalctl. Checks both litellm and postgresql services. All checks return `None` on failure rather than raising.
 - **snapshot.py**: Captures files listed in `config.SNAPSHOT_SOURCES` plus `systemctl status` and `uv pip freeze` output. Diffing uses `difflib.unified_diff`. Export uses PyYAML.
 - **config.py**: Pure constants — paths, URLs, valid categories. No logic.
-- **update.py**: Orchestrates LiteLLM updates — `uv pip install --upgrade litellm`, then `--upgrade litellm-proxy-extras` (must move in lockstep; litellm pins an old version), then regenerates the Prisma client (`prisma generate` into the venv, with venv `bin` prepended to PATH so it doesn't write to system site-packages), then service restart and health polling. Takes pre/post snapshots and logs results to `maintenance_log`. Each step aborts the update on failure and logs the reason rather than crashing.
+- **update.py**: Follows the official uv/venv upgrade procedure (https://docs.litellm.ai/docs/troubleshoot/pip_venv_upgrade): stop service → `pg_dump -F c` into `backups/` → `uv pip install 'litellm[proxy]==X'` (the extra pins the matching `litellm-proxy-extras` and proxy-only deps — never upgrade proxy-extras independently) → `prisma generate`, `migrate deploy`, `migrate status` against `litellm_proxy_extras/schema.prisma` (venv `bin` prepended to PATH so the client lands in the venv) → start service and poll health (up to 10 min). `check-update` compares the installed litellm version to PyPI's latest only. Takes pre/post snapshots and logs results to `maintenance_log`. Each step aborts on failure and logs the reason; failures before install restart the old version, failures after leave the service stopped.
 - **lxcnote.py**: Generates markdown for Proxmox LXC Notes tab — pulls hostname, IP, OS, version, service status (litellm + postgresql), resources, and last maintenance entry.
 - **cron.py**: Manages crontab entries identified by a `# ltm-health-check` marker comment.
 
