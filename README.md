@@ -77,6 +77,7 @@ Notes and log entries support these categories (prefix-matching enabled):
 | **Install path** | `/opt/litellm` |
 | **Package manager** | `uv` |
 | **Health endpoint** | `http://localhost:4000/health` |
+| **Admin UI login** | Personal `proxy_admin` accounts only -- `general_settings.disable_env_credential_login: true` blocks the shared `admin`/master-key login (the master key still works over the API) |
 | **DB backups** | `backups/` (gitignored) |
 | **Manager DB** | `ltm.db` (SQLite, overridable via `LTM_DB` env var) |
 

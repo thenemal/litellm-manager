@@ -52,6 +52,13 @@ cli.py  ──→  health.py   ──→  db.py (SQLite via context manager)
 - **lxcnote.py**: Generates markdown for Proxmox LXC Notes tab — pulls hostname, IP, OS, version, service status (litellm + postgresql), resources, and last maintenance entry.
 - **cron.py**: Manages crontab entries identified by a `# ltm-health-check` marker comment.
 
+## Container Configuration (non-default)
+
+Settings on the LiteLLM side that this tool's behavior or troubleshooting depends on:
+- `/opt/litellm/.env`: `DISABLE_SCHEMA_UPDATE=true` — the proxy skips migrations at startup; `ltm update` is the only migrator. Expected harmless startup log: `Failed to generate migration diff ... schema.prisma: file or directory not found` (upstream drift check uses a relative path that only exists in the Docker image).
+- `/opt/litellm/litellm.yaml`: `general_settings.disable_env_credential_login: true` — the shared `admin` + master-key UI login returns 401; only personal `proxy_admin` accounts with passwords can sign in to the UI. The master key still works over the API (`Authorization: Bearer`). Revert by removing the setting and restarting.
+- Secrets (master key, DB URL) live in `litellm.yaml`, not `.env`. Read them only inside Python and never print them; the permission hook blocks commands that extract them.
+
 ## Database
 
 Three tables in `ltm.db` (all timestamps ISO 8601 localtime):
